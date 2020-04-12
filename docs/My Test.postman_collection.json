@@ -251,12 +251,13 @@
 							"formdata": []
 						},
 						"url": {
-							"raw": "localhost:8084/items",
+							"raw": "localhost:8084/user/items",
 							"host": [
 								"localhost"
 							],
 							"port": "8084",
 							"path": [
+								"user",
 								"items"
 							]
 						}
