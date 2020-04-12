@@ -2,7 +2,12 @@
 
 This repository contains the spring boot cloud Circuit breaker and load balancer implementation. This example is continuation of the [Cloud Zuul API Gateway](https://github.com/developerhelperhub/spring-boot2-cloud-netflix-api-gateway) example. I would suggest, please look previous implementation before looking this source code.
 
-## Documentation coming soon......:)
+#### Note : Implementation not completed, only implemented done in the sales-service for the rest API communciation call from inventory-service.
+
+#### Below implementation coming soon...
+* Circuit breaker
+* Documentation
+
 
 This repository contains seven maven project. 
 * my-cloud-service: Its main module, it contains the dependecy management of our application.
