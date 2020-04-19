@@ -2,6 +2,21 @@
 
 This repository contains the spring boot cloud Circuit breaker and load balancer implementation. This example is continuation of the [Cloud Zuul API Gateway](https://github.com/developerhelperhub/spring-boot2-cloud-netflix-api-gateway) example. I would suggest, please look previous implementation before looking this source code.
 
+#### Note : Implementation not completed, only implemented done in the sales-service for the rest API communciation call from inventory-service.
+
+#### Below implementation coming soon...
+* Circuit breaker
+* Documentation
+
+This repository contains seven maven project. 
+* my-cloud-service: Its main module, it contains the dependecy management of our application.
+* my-cloud-discovery-service: This is the server for the discovery service.
+* identity-service: This authentication server service. 
+* client-application-service: This client application for authentication server.
+* inventory-service: This is one of the microservice which is called inventory service to manage the inventory in the project.
+* sales-service: This is one of the microservice which is called sales service to manage the point of sales in the project.
+
+
 In this example, I am using the use case is pull the data from ```inventory-service``` to ```sales-service``` through rest API. In this case, we face the cascade failures if the ```inventory-service``` failed. As per my understanding, in this use case, we can handle two kind of approach, when we call the rest API from once service to another service, one is ```retry mechanism``` and another one is ```circuit breaker```. 
 
 In this example, I am using circuit breaker implementation because I am assuming that, if the ```inventory-service``` service is failing more than one minute, my client should not face communication failures and ```sales-serivce``` should handle this issue accordingly and send the correct response back to the client. 
@@ -254,23 +269,195 @@ public class MethodSecurityConfiguration extends GlobalMethodSecurityConfigurati
 	}
 }
 ```
+*Note:* ```prePostEnabled = true, securedEnabled = true``` should be added in the global method security annotation, because I got an errors are ```Caused by: java.lang.IllegalStateException: In the composition of all global method configuration, no annotation support was actually activated``` and ```java.lang.IllegalArgumentException: Failed to evaluate expression '#oauth2.throwOnError(oauth2.hasScope('ADMIN'))'```.
 
 
+### Code changes in the sales-service.
+We need to enable the ```@EnableOAuth2Client``` and create new bean class ```OAuth2RestTemplate``` for implementing the rest template to call the endpoints of ```inventory-service```. We should enable the oauth2 client when we are using the oauth2 implementation in the project. 
 
-#### Note : Implementation not completed, only implemented done in the sales-service for the rest API communciation call from inventory-service.
+The below code need to be added for bean creation in the ```ResourceServerConfig```:
+```java
+        @Bean
+	@LoadBalanced
+	public OAuth2RestTemplate identityRestTemplate() {
+		final ClientCredentialsResourceDetails resourceDetails = new ClientCredentialsResourceDetails();
+		resourceDetails.setId("identity-service");
+		resourceDetails.setClientId("my-cloud-identity-credentials");
+		resourceDetails.setClientSecret("VkZpzzKa3uMq4vqg");
+		resourceDetails.setGrantType("client_credentials");
+		resourceDetails.setScope(Arrays.asList("ADMIN"));
+		resourceDetails.setAccessTokenUri("http://localhost:8081/auth/oauth/token");
 
-#### Below implementation coming soon...
-* Circuit breaker
-* Documentation
+		OAuth2RestTemplate template = new OAuth2RestTemplate(resourceDetails);
+
+		return template;
+	}
+```
+
+*Note:*
+* I already mentioned in above, we are using the ```client credentials``` for accessing the endpoints. We should add the ```my-cloud-identity-credentials``` client in the ```identity-service```.
+* We need to add the ```@LoadBalanced``` annotation to call the APIs with service name in the rest template like ```http://inventory-service/admin/items```. The default load balance configuration will be added in the rest template calls.
+
+We created the ```InventoryService``` service and ```Item``` model to get the information from the ```inventory-service```.
+
+Code of ```Item``` model:
+```java
+package com.developerhelperhub.ms.id.inventory.service;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class Item {
+
+	private Long id;
+	private String name;
+	private int quantity;
+
+	public Item() {
+	}
+
+	public Item(Long id, String name, int quantity) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.quantity = quantity;
+	}
+
+	@Override
+	public String toString() {
+		return "Item [id=" + id + ", name=" + name + ", quantity=" + quantity + "]";
+	}
+
+}
+```
+
+Code of ```InventoryService``` service:
+```java
+package com.developerhelperhub.ms.id.inventory.service;
+
+import java.util.Collection;
+
+public interface InventoryService {
+
+	public Item addItem(Item item);
+
+	public Item getItem(Long id);
+
+	public Collection<Item> getItems();
+}
+```
+
+Code of ```InventoryServiceImpl``` service implementation of inventory service:
+```java
+package com.developerhelperhub.ms.id.inventory.service;
+
+import java.util.Collection;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2RestTemplate;
+import org.springframework.stereotype.Service;
+
+@Service
+public class InventoryServiceImpl implements InventoryService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(InventoryServiceImpl.class);
+
+	@Autowired
+	private OAuth2RestTemplate restTemplate;
+
+	public Item addItem(Item item) {
+
+		ParameterizedTypeReference<Item> reference = new ParameterizedTypeReference<Item>() {
+		};
+
+		HttpEntity<Item> headerEntity = new HttpEntity<Item>(item);
+
+		ResponseEntity<Item> entity = restTemplate.exchange("http://inventory-service/admin/items", HttpMethod.POST,
+				headerEntity, reference);
+
+		LOGGER.debug("Added item : {}", entity.getBody());
+
+		return entity.getBody();
+	}
+
+	public Item getItem(Long id) {
+
+		ParameterizedTypeReference<Item> reference = new ParameterizedTypeReference<Item>() {
+		};
+
+		ResponseEntity<Item> entity = restTemplate.exchange("http://inventory-service/admin/items/" + id,
+				HttpMethod.GET, null, reference);
+
+		LOGGER.debug("Get item by {}", id);
+
+		return entity.getBody();
+	}
+
+	public Collection<Item> getItems() {
+
+		ParameterizedTypeReference<List<Item>> reference = new ParameterizedTypeReference<List<Item>>() {
+		};
+
+		ResponseEntity<List<Item>> entity = restTemplate.exchange("http://inventory-service/admin/items",
+				HttpMethod.GET, null, reference);
+
+		LOGGER.debug("{} items found", entity.getBody().size());
+
+		return entity.getBody();
+	}
+
+}
+```
+
+We provides the endpoints in the ```SalesController```:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import java.util.Collection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.developerhelperhub.ms.id.inventory.service.InventoryService;
+import com.developerhelperhub.ms.id.inventory.service.Item;
+
+@RestController
+public class SalesController {
+
+	@Autowired
+	private InventoryService inventoryService;
+
+	@RequestMapping(value = "/items", method = RequestMethod.GET)
+	public Collection<Item> items() {
+		return inventoryService.getItems();
+	}
+
+	@RequestMapping(value = "/items", method = RequestMethod.POST)
+	public Item addItem(@RequestBody Item item) {
+		return inventoryService.addItem(item);
+	}
+
+	@RequestMapping(value = "/items/{id}", method = RequestMethod.GET)
+	public Item getItem(@PathVariable(value = "id") Long id) {
+		return inventoryService.getItem(id);
+	}
+}
+```
 
 
-This repository contains seven maven project. 
-* my-cloud-service: Its main module, it contains the dependecy management of our application.
-* my-cloud-discovery-service: This is the server for the discovery service.
-* identity-service: This authentication server service. 
-* client-application-service: This client application for authentication server.
-* inventory-service: This is one of the microservice which is called inventory service to manage the inventory in the project.
-* sales-service: This is one of the microservice which is called sales service to manage the point of sales in the project.
 
 ### Reference
 * [Spring boot circuit breaker](https://cloud.spring.io/spring-cloud-netflix/2.2.x/reference/html/#circuit-breaker-spring-cloud-circuit-breaker-with-hystrix)
