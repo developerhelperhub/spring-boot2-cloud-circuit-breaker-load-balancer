@@ -5,8 +5,8 @@ This repository contains the spring boot cloud Circuit breaker and load balancer
 #### Note : Implementation not completed, only implemented done in the sales-service for the rest API communciation call from inventory-service.
 
 #### Below implementation coming soon...
-* Circuit breaker
-* Documentation
+* Circuit breaker (To Do)
+* Adding documentation (In progress)
 
 This repository contains seven maven project. 
 * my-cloud-service: Its main module, it contains the dependecy management of our application.
@@ -269,7 +269,7 @@ public class MethodSecurityConfiguration extends GlobalMethodSecurityConfigurati
 	}
 }
 ```
-*Note:* ```prePostEnabled = true, securedEnabled = true``` should be added in the global method security annotation, because I got an errors are ```Caused by: java.lang.IllegalStateException: In the composition of all global method configuration, no annotation support was actually activated``` and ```java.lang.IllegalArgumentException: Failed to evaluate expression '#oauth2.throwOnError(oauth2.hasScope('ADMIN'))'```.
+**Note:** ```prePostEnabled = true, securedEnabled = true``` should be added in the global method security annotation, because I got an errors are ```Caused by: java.lang.IllegalStateException: In the composition of all global method configuration, no annotation support was actually activated``` and ```java.lang.IllegalArgumentException: Failed to evaluate expression '#oauth2.throwOnError(oauth2.hasScope('ADMIN'))'```.
 
 
 ### Code changes in the sales-service.
@@ -294,7 +294,7 @@ The below code need to be added for bean creation in the ```ResourceServerConfig
 	}
 ```
 
-*Note:*
+**Note:**
 * I already mentioned in above, we are using the ```client credentials``` for accessing the endpoints. We should add the ```my-cloud-identity-credentials``` client in the ```identity-service```.
 * We need to add the ```@LoadBalanced``` annotation to call the APIs with service name in the rest template like ```http://inventory-service/admin/items```. The default load balance configuration will be added in the rest template calls.
 
@@ -490,11 +490,19 @@ I provided the collection and environment file of postman in the doc folder. Bef
 * sales-service
 * api-gateway-service
 
-*Note:* In this collection, I added the collection of inventory and sales service, so we can use the collection also testing without using API Gateway service.
+**Note:** In this collection, I added the collection of inventory and sales service, so we can use the collection also testing without using API Gateway service.
 
-
-
-
+**Testing API calles in order:**
+* Identity Service
+ - Login: POST - localhost:8081/auth/oauth/token
+* API Gateway: testing invendory service
+ - Get all items : GET - localhost:8085/inventory/user/items
+ - Add new item : PUT - localhost:8085/inventory/user/items
+ - Get item by id : GET - localhost:8085/inventory/user/items/1
+* API Gateway: testing sales service
+ - Get all items : GET - localhost:8085/sales/items
+ - Add new item : PUT - localhost:8085/sales/items
+ - Get item by id : GET - localhost:8085/sales/items/1
 
 
 ### Reference
