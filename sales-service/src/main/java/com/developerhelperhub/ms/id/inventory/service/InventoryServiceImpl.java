@@ -1,5 +1,6 @@
 package com.developerhelperhub.ms.id.inventory.service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.stereotype.Service;
 
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+
 @Service
 public class InventoryServiceImpl implements InventoryService {
 
@@ -21,6 +24,7 @@ public class InventoryServiceImpl implements InventoryService {
 	@Autowired
 	private OAuth2RestTemplate restTemplate;
 
+	@HystrixCommand(fallbackMethod = "defaultAddItem")
 	public Item addItem(Item item) {
 
 		ParameterizedTypeReference<Item> reference = new ParameterizedTypeReference<Item>() {
@@ -36,6 +40,11 @@ public class InventoryServiceImpl implements InventoryService {
 		return entity.getBody();
 	}
 
+	public Item defaultAddItem(Item item) {
+		return new Item(0L, "Default Item", 0);
+	}
+
+	@HystrixCommand(fallbackMethod = "defaultGetItem")
 	public Item getItem(Long id) {
 
 		ParameterizedTypeReference<Item> reference = new ParameterizedTypeReference<Item>() {
@@ -49,6 +58,11 @@ public class InventoryServiceImpl implements InventoryService {
 		return entity.getBody();
 	}
 
+	public Item defaultGetItem(Long id) {
+		return new Item(0L, "Default Item", 0);
+	}
+
+	@HystrixCommand(fallbackMethod = "defaultGetItems")
 	public Collection<Item> getItems() {
 
 		ParameterizedTypeReference<List<Item>> reference = new ParameterizedTypeReference<List<Item>>() {
@@ -60,6 +74,12 @@ public class InventoryServiceImpl implements InventoryService {
 		LOGGER.debug("{} items found", entity.getBody().size());
 
 		return entity.getBody();
+	}
+
+	public Collection<Item> defaultGetItems() {
+		List<Item> items = new ArrayList<Item>();
+		items.add(new Item(0L, "Default Item", 0));
+		return items;
 	}
 
 }

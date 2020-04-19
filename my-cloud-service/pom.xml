@@ -73,6 +73,7 @@
 		<module>../identity-service</module>
 		<module>../my-cloud-discovery-service</module>
 		<module>../api-gateway-service</module>
+		<module>../my-cloud-circuit-breaker</module>
 
 		<module>../sales-service</module>
 		<module>../inventory-service</module>

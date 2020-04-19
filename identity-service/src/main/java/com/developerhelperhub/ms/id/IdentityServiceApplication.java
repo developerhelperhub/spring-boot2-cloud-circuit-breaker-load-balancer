@@ -42,8 +42,9 @@ public class IdentityServiceApplication implements CommandLineRunner {
 		client.setClientSecret("VkZpzzKa3uMq4vqg");
 
 		// Added the new resources id's
-		client.setResourceIds(new HashSet<String>(Arrays.asList("identity_id", "inventory_service_resource_id",
-				"api_gateway_resource_id", "sales_service_resource_id", "my_cloud_discovery_id")));
+		client.setResourceIds(new HashSet<String>(
+				Arrays.asList("identity_id", "inventory_service_resource_id", "api_gateway_resource_id",
+						"sales_service_resource_id", "my_cloud_discovery_id", "my_cloud_circuit_breaker_id")));
 
 		client.addGrantedAuthority("ADMIN");
 
@@ -63,8 +64,9 @@ public class IdentityServiceApplication implements CommandLineRunner {
 		client.setClientSecret("VkZpzzKa3uMq4vqg");
 
 		// Added the new resources id's
-		client.setResourceIds(new HashSet<String>(Arrays.asList("identity_id", "inventory_service_resource_id",
-				"api_gateway_resource_id", "sales_service_resource_id", "my_cloud_discovery_id")));
+		client.setResourceIds(new HashSet<String>(
+				Arrays.asList("identity_id", "inventory_service_resource_id", "api_gateway_resource_id",
+						"sales_service_resource_id", "my_cloud_discovery_id", "my_cloud_circuit_breaker_id")));
 
 		client.addGrantedAuthority("ADMIN");
 
