@@ -457,6 +457,44 @@ public class SalesController {
 }
 ```
 
+### Code changes in the identity-service.
+
+We added the ```my-cloud-identity-credentials``` client in the run method of ```IdentityServiceApplication```.
+```java
+                client.setClientId("my-cloud-identity-credentials");
+		client.setClientSecret("VkZpzzKa3uMq4vqg");
+
+		// Added the new resources id's
+		client.setResourceIds(new HashSet<String>(Arrays.asList("identity_id", "inventory_service_resource_id",
+				"api_gateway_resource_id", "sales_service_resource_id", "my_cloud_discovery_id")));
+
+		client.addGrantedAuthority("ADMIN");
+
+		client.setSecretRequired(true);
+		client.setScoped(true);
+		client.setScope(new HashSet<String>(Arrays.asList("ADMIN")));
+		client.setAuthorizedGrantTypes(new HashSet<String>(Arrays.asList("client_credentials")));
+		client.setAccessTokenValiditySeconds(43199);
+		client.setRefreshTokenValiditySeconds(83199);
+		client.setAutoApprove(true);
+
+		client.create();
+```
+
+### Testing 
+I provided the collection and environment file of postman in the doc folder. Before start testing we have to run the below services in the order.
+
+* identity-service
+* my-cloud-discovery-service
+* inventory-service
+* sales-service
+* api-gateway-service
+
+*Note:* In this collection, I added the collection of inventory and sales service, so we can use the collection also testing without using API Gateway service.
+
+
+
+
 
 
 ### Reference
