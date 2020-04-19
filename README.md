@@ -2,13 +2,258 @@
 
 This repository contains the spring boot cloud Circuit breaker and load balancer implementation. This example is continuation of the [Cloud Zuul API Gateway](https://github.com/developerhelperhub/spring-boot2-cloud-netflix-api-gateway) example. I would suggest, please look previous implementation before looking this source code.
 
-In this example, I am using the use case is pull the data from ```inventory-service``` to ```sales-service``` through rest API. In this case, we face the cascade failures if the ```inventory-service``` failed. As per my understanding, in this use case, we can handle to kind of approach when we call the rest API from once service to another service, one is retry mechanism and another one is circuit breaker. In this example, I am using circuit breaker implementation because, I am assuming that, if the ```inventory-service``` service is failing more than one minute, my client should not face communication failures and ```sales-serivce``` should handle this issue and send the correct response back to the client. 
+In this example, I am using the use case is pull the data from ```inventory-service``` to ```sales-service``` through rest API. In this case, we face the cascade failures if the ```inventory-service``` failed. As per my understanding, in this use case, we can handle two kind of approach, when we call the rest API from once service to another service, one is ```retry mechanism``` and another one is ```circuit breaker```. 
+
+In this example, I am using circuit breaker implementation because I am assuming that, if the ```inventory-service``` service is failing more than one minute, my client should not face communication failures and ```sales-serivce``` should handle this issue accordingly and send the correct response back to the client. 
 
 In this cases ```inventory-service``` failied, the circuit breaker will open, if the failure is reached the partiular threshold, and redirect the API call into callback method in the ```seales-service```. Once ```inventory-service``` is working fine, then circuit breaker will close and the API communication will start work.
 
 We need to implement the API communication from ```inventory-service``` to ```sales-service``` before jumping into the cuircute breaker code implementation. 
 
 ### Code changes in the inventory-service.
+We need to create the respective API endpoints in the service which are required to call the APIs from the ```sales-service```. 
+
+I created one service for managing the items in the service. We need to create the model class and service class for item service.
+
+```Item``` model class code:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
+public class Item {
+
+	private Long id;
+	private String name;
+	private int quantity;
+
+	public Item() {
+	}
+
+	public Item(Long id, String name, int quantity) {
+		super();
+		this.id = id;
+		this.name = name;
+		this.quantity = quantity;
+	}
+
+	@Override
+	public String toString() {
+		return "Item [id=" + id + ", name=" + name + ", quantity=" + quantity + "]";
+	}
+}
+```
+
+```ItemService``` model interface code:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import java.util.Collection;
+
+public interface ItemService {
+
+	public Item addItem(Item item);
+
+	public Item getItem(Long id);
+
+	public Collection<Item> getItems();
+}
+```
+
+```ItemServiceImpl``` implementation of item service:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ItemServiceImpl implements ItemService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ItemServiceImpl.class);
+
+	private Map<Long, Item> items = new HashMap<Long, Item>();
+
+	public Item addItem(Item item) {
+
+		LOGGER.debug("Added item : {}", item);
+
+		return items.put(item.getId(), item);
+	}
+
+	public Item getItem(Long id) {
+
+		if (!items.containsKey(id)) {
+
+			LOGGER.debug("Item not found by {}", id);
+
+			throw new RuntimeException(id + " item not found!");
+		}
+
+		LOGGER.debug("Get item by {}", id);
+
+		return items.get(id);
+	}
+
+	public Collection<Item> getItems() {
+
+		LOGGER.debug("{} items found", items.size());
+
+		return items.values();
+	}
+}
+```
+
+I added the default items in the service while loading this service. This code in ```InventoryServiceApplication```:
+```java
+package com.developerhelperhub.ms.id;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+
+import com.developerhelperhub.ms.id.controller.Item;
+import com.developerhelperhub.ms.id.controller.ItemService;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+public class InventoryServiceApplication implements CommandLineRunner {
+
+	@Autowired
+	private ItemService itemService;
+
+	public static void main(String[] args) {
+		SpringApplication.run(InventoryServiceApplication.class, args);
+	}
+
+	public void run(String... args) throws Exception {
+		itemService.addItem(new Item(1L, "TV", 10));
+		itemService.addItem(new Item(2L, "Fridge", 5));
+		itemService.addItem(new Item(3L, "AC", 5));
+	}
+}
+```
+
+I created two controller, one is for ```InventoryUserController``` and another one is for ```InventoryAdminController```, these controller have its on base path patterns to differentiate it. The ```/user/**``` path pattern is using for user endpoints and ```/admin/***``` path pattern is using for admin endpoints.
+
+The ```InventoryUserController``` is providing the endpoints for the clients to add the items, get the items and list the items. These endpoints are used for accessing the logged users who have the role is "ROLE_USER". The code in the ```InventoryUserController```:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import java.util.Collection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(value = "/user")
+public class InventoryUserController {
+
+	@Autowired
+	private ItemService itemService;
+
+	@RequestMapping(value = "/items", method = RequestMethod.GET)
+	public Collection<Item> items() {
+		return itemService.getItems();
+	}
+
+	@RequestMapping(value = "/items", method = RequestMethod.POST)
+	public Item addItem(@RequestBody Item item) {
+		return itemService.addItem(item);
+	}
+
+	@RequestMapping(value = "/items/{id}", method = RequestMethod.GET)
+	public Item getItem(@PathVariable(value = "id") Long id) {
+		return itemService.getItem(id);
+	}
+}
+```
+
+The ```InventoryAdminController``` is providing the endpoints for the ```other services``` who are accessing internally, in this case, this ```InventoryAdminController``` APIs are using the ```sales-service``` to share the information between ```inventory-service``` and ```sales-service```.  
+
+I am using the security for this ```Oauth2 grant type security client_credentials``` because I don't want the user information share between these services. In this secruity, we can use direct client credentials to generate the token and access the endpoints and I am providing the security scope ```ADMIN```, which means, these APIs can access only who are the clients should be thier secuirity scope should be ```ADMIN```.
+
+The code in the ```InventoryAdminController```:
+```java
+package com.developerhelperhub.ms.id.controller;
+
+import java.util.Collection;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping(value = "/admin")
+public class InventoryAdminController {
+
+	@Autowired
+	private ItemService itemService;
+
+	@RequestMapping(value = "/items", method = RequestMethod.GET)
+	public Collection<Item> items() {
+		return itemService.getItems();
+	}
+
+	@RequestMapping(value = "/items", method = RequestMethod.POST)
+	public Item addItem(@RequestBody Item item) {
+		return itemService.addItem(item);
+	}
+
+	@RequestMapping(value = "/items/{id}", method = RequestMethod.GET)
+	public Item getItem(@PathVariable(value = "id") Long id) {
+		return itemService.getItem(id);
+	}
+}
+```
+
+We need to add the relevent security for ```/user/**``` and ```/admin/**``` path patterns in the ```ResourceServerConfig```.
+```java
+  
+  @Override
+	public void configure(HttpSecurity http) throws Exception {
+		http.anonymous().disable().authorizeRequests().antMatchers("/user/**").access("hasRole('USER')")
+				.antMatchers("/admin/**").access("#oauth2.hasScope('ADMIN')").and().exceptionHandling()
+				.accessDeniedHandler(new OAuth2AccessDeniedHandler());
+	}
+```
+One more thing is that, ```#oauth2.hasScope('ADMIN')``` to support the secuirty expression handler for ```oauth2```, we need to enable the ```@EnableGlobalMethodSecurity``` and expression handler, I added new class for this which is called ```MethodSecurityConfiguration```:
+```java
+package com.developerhelperhub.ms.id.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.GlobalMethodSecurityConfiguration;
+import org.springframework.security.oauth2.provider.expression.OAuth2MethodSecurityExpressionHandler;
+
+@Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true)
+public class MethodSecurityConfiguration extends GlobalMethodSecurityConfiguration {
+
+	@Override
+	protected MethodSecurityExpressionHandler createExpressionHandler() {
+		return new OAuth2MethodSecurityExpressionHandler();
+	}
+}
+```
 
 
 
