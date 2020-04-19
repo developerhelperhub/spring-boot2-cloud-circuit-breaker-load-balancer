@@ -496,13 +496,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "localhost:8085/inventory/items",
+									"raw": "localhost:8085/inventory/user/items",
 									"host": [
 										"localhost"
 									],
 									"port": "8085",
 									"path": [
 										"inventory",
+										"user",
 										"items"
 									]
 								}
@@ -525,17 +526,23 @@
 								"method": "POST",
 								"header": [],
 								"body": {
-									"mode": "formdata",
-									"formdata": []
+									"mode": "raw",
+									"raw": "{\n\t\"id\": 4,\n\t\"name\": \"LCD\",\n\t\"quantity\": 20\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
 								},
 								"url": {
-									"raw": "localhost:8085/inventory/items",
+									"raw": "localhost:8085/inventory/user/items",
 									"host": [
 										"localhost"
 									],
 									"port": "8085",
 									"path": [
 										"inventory",
+										"user",
 										"items"
 									]
 								}
@@ -565,13 +572,14 @@
 									"formdata": []
 								},
 								"url": {
-									"raw": "localhost:8085/inventory/items/1",
+									"raw": "localhost:8085/inventory/user/items/1",
 									"host": [
 										"localhost"
 									],
 									"port": "8085",
 									"path": [
 										"inventory",
+										"user",
 										"items",
 										"1"
 									]

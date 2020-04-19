@@ -14,7 +14,6 @@ import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-
 public class InventoryServiceImpl implements InventoryService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InventoryServiceImpl.class);
