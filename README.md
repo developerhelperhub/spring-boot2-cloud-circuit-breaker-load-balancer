@@ -494,15 +494,15 @@ I provided the collection and environment file of postman in the doc folder. Bef
 
 **Testing API calles in order:**
 * Identity Service
- - Login POST ```http://localhost:8081/auth/oauth/token```
-* API Gateway testing invendory service
- - Get all items GET ```http://localhost:8085/inventory/user/items```
- - Add new item PUT ```http://localhost:8085/inventory/user/items```
- - Get item by id GET ```http://localhost:8085/inventory/user/items/1```
+  * Login: POST ```http://localhost:8081/auth/oauth/token```
+* API Gateway: testing invendory service
+  * Get all items: GET - ```http://localhost:8085/inventory/user/items```
+  * Add new item: PUT - ```http://localhost:8085/inventory/user/items```
+  * Get item by id: GET - ```http://localhost:8085/inventory/user/items/1```
 * API Gateway: testing sales service
- - Get all items GET ```http://localhost:8085/sales/items```
- - Add new item PUT ```http://localhost:8085/sales/items```
- - Get item by id GET ```http://localhost:8085/sales/items/1```
+  * Get all items: GET - ```http://localhost:8085/sales/items```
+  * Add new item: PUT - ```http://localhost:8085/sales/items```
+  * Get item by id: GET - ```http://localhost:8085/sales/items/1```
 
 
 ### Reference
