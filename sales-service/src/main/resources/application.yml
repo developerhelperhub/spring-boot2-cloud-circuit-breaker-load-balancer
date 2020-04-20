@@ -1,7 +1,15 @@
 spring:
   application:
     name: sales-service
-            
+  security:
+    user:
+      name: breaker
+      password: breaker
+  cloud:
+    circuitbreaker:
+      hystrix:
+        enabled: false
+
 logging:
   level:
     org:
@@ -19,4 +27,4 @@ management:
   endpoints:
     web:
       exposure:
-        include: hystrix.stream
+        include: hystrix.stream, health

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.security.oauth2.client.token.grant.client.ClientCredentialsResourceDetails;
@@ -23,6 +24,7 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 @Configuration
 @EnableOAuth2Client
 @EnableResourceServer
+@Order(2)
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ResourceServerConfig.class);

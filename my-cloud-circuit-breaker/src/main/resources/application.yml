@@ -1,11 +1,10 @@
-
 spring:
   application:
     name: my-cloud-circuit-breaker-service
   security:
     user:
       name: breaker
-      password: breakerypass
+      password: breaker
 
 logging:
   level:
@@ -25,3 +24,10 @@ eureka:
   client:
     serviceUrl:
       defaultZone: http://discovery:discoverypass@localhost:8761/eureka/
+
+hystrix:
+  shareSecurityContext: true
+ 
+turbine:
+  appConfig: sales-service
+  clusterNameExpression: new String("default")
