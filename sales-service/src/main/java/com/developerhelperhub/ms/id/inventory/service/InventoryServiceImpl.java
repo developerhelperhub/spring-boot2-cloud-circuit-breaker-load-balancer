@@ -11,8 +11,8 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.oauth2.client.OAuth2RestTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
@@ -21,8 +21,11 @@ public class InventoryServiceImpl implements InventoryService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InventoryServiceImpl.class);
 
+//	@Autowired
+//	private OAuth2RestTemplate restTemplate;
+
 	@Autowired
-	private OAuth2RestTemplate restTemplate;
+	private RestTemplate restTemplate;
 
 	@HystrixCommand(fallbackMethod = "defaultAddItem")
 	public Item addItem(Item item) {

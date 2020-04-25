@@ -8,7 +8,6 @@ import org.springframework.cloud.netflix.hystrix.dashboard.EnableHystrixDashboar
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableHystrixDashboard
-//@EnableTurbine
 public class MyCloudCircuitBreakerApplication {
 
 	public static void main(String[] args) {

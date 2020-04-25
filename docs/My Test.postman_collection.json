@@ -115,6 +115,186 @@
 			"name": "Sales Service",
 			"item": [
 				{
+					"name": "Actuator APIs",
+					"item": [
+						{
+							"name": "sales-service-actuator-hystrix.stream",
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8083/actuator/hystrix.stream",
+									"host": [
+										"localhost"
+									],
+									"port": "8083",
+									"path": [
+										"actuator",
+										"hystrix.stream"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sales-service-actuator-info",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "localhost:8083/actuator/info",
+									"host": [
+										"localhost"
+									],
+									"port": "8083",
+									"path": [
+										"actuator",
+										"info"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sales-service-actuator-health",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "localhost:8083/actuator/health",
+									"host": [
+										"localhost"
+									],
+									"port": "8083",
+									"path": [
+										"actuator",
+										"health"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sales-service-actuator-metrics",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "localhost:8083/actuator/metrics",
+									"host": [
+										"localhost"
+									],
+									"port": "8083",
+									"path": [
+										"actuator",
+										"metrics"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "sales-service-actuator-metrics(jvm.memory.used)",
+							"protocolProfileBehavior": {
+								"disableBodyPruning": true
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{accessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": []
+								},
+								"url": {
+									"raw": "localhost:8083/actuator/metrics",
+									"host": [
+										"localhost"
+									],
+									"port": "8083",
+									"path": [
+										"actuator",
+										"metrics"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"protocolProfileBehavior": {},
+					"_postman_isSubFolder": true
+				},
+				{
 					"name": "sales-service-items",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
@@ -137,12 +317,13 @@
 							"formdata": []
 						},
 						"url": {
-							"raw": "localhost:8083/items",
+							"raw": "localhost:8083/sales/items",
 							"host": [
 								"localhost"
 							],
 							"port": "8083",
 							"path": [
+								"sales",
 								"items"
 							]
 						}

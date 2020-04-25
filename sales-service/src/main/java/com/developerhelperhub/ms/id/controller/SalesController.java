@@ -13,6 +13,7 @@ import com.developerhelperhub.ms.id.inventory.service.InventoryService;
 import com.developerhelperhub.ms.id.inventory.service.Item;
 
 @RestController
+@RequestMapping("/sales")
 public class SalesController {
 
 	@Autowired
