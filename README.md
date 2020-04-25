@@ -2,10 +2,6 @@
 
 This repository contains the spring boot cloud Circuit breaker and load balancer implementation. This example is continuation of the [Cloud Zuul API Gateway](https://github.com/developerhelperhub/spring-boot2-cloud-netflix-api-gateway) example. I would suggest, please look previous implementation before looking this source code.
 
-#### Below implementation coming soon...
-* Circuit breaker dashboard (In progress)
-* Adding documentation (In progress)
-
 This repository contains seven maven project. 
 * my-cloud-service: Its main module, it contains the dependecy management of our application.
 * my-cloud-discovery-service: This is the server for the discovery service.
@@ -13,6 +9,7 @@ This repository contains seven maven project.
 * client-application-service: This client application for authentication server.
 * inventory-service: This is one of the microservice which is called inventory service to manage the inventory in the project.
 * sales-service: This is one of the microservice which is called sales service to manage the point of sales in the project.
+* my-cloud-circuit-breaker: This is one of the microservice which is used to view hystrix dashboard
 
 
 In this example, I am using the use case is pull the data from ```inventory-service``` to ```sales-service``` through rest API. In this case, we face the cascade failures if the ```inventory-service``` failed. As per my understanding, in this use case, we can handle two kind of approach, when we call the rest API from once service to another service, one is ```retry mechanism``` and another one is ```circuit breaker```. 
@@ -271,6 +268,9 @@ public class MethodSecurityConfiguration extends GlobalMethodSecurityConfigurati
 
 
 ### Code changes in the sales-service.
+I am explain the changes in two section, one is, how to implement the service call from this servie to ```inventory-service``` through the oauth2 and enabling the circute breaker.
+
+#### Section 1: implementing the Oauth2 service call
 We need to enable the ```@EnableOAuth2Client``` and create new bean class ```OAuth2RestTemplate``` for implementing the rest template to call the endpoints of ```inventory-service```. We should enable the oauth2 client when we are using the oauth2 implementation in the project. 
 
 The below code need to be added for bean creation in the ```ResourceServerConfig```:
@@ -296,6 +296,105 @@ The below code need to be added for bean creation in the ```ResourceServerConfig
 * I already mentioned in above, we are using the ```client credentials``` for accessing the endpoints. We should add the ```my-cloud-identity-credentials``` client in the ```identity-service```.
 * We need to add the ```@LoadBalanced``` annotation to call the APIs with service name in the rest template like ```http://inventory-service/admin/items```. The default load balance configuration will be added in the rest template calls.
 
+#### Section 2: Enabling the ciruit breaker
+We need to add the ```@EnableCircuitBreaker``` annotation in the main class ```SalesServiceApplication``` and add below  dependency in the pom.xml file.
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+</dependency>
+```
+I added the below property to disable the default circuit breaker configuration and added the ```HystrixConfiguration``` configuration class to customise the configuration.
+```yml
+spring:
+  cloud:
+    circuitbreaker:
+      hystrix:
+        enabled: false
+
+```
+
+Code in the HystrixConfiguration:
+```java
+package com.developerhelperhub.ms.id.config;
+
+import org.springframework.cloud.client.circuitbreaker.Customizer;
+import org.springframework.cloud.netflix.hystrix.HystrixCircuitBreakerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import com.netflix.hystrix.HystrixCommand;
+import com.netflix.hystrix.HystrixCommandGroupKey;
+import com.netflix.hystrix.HystrixCommandProperties;
+
+@Configuration
+public class HystrixConfiguration {
+
+	@Bean
+	public Customizer<HystrixCircuitBreakerFactory> defaultConfig() {
+		return factory -> factory.configureDefault(id -> HystrixCommand.Setter
+				.withGroupKey(HystrixCommandGroupKey.Factory.asKey(id)).andCommandPropertiesDefaults(
+
+						HystrixCommandProperties.Setter().withExecutionTimeoutInMilliseconds(4000)
+
+				));
+	}
+
+}
+```
+
+We need to enable the ```actuator``` dependency for enabling the ```/actuator/hystrix.stream``` API. This API is used to view the graph in the ```my-cloud-circuit-breaker``` dashboard.
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+	<artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+```
+
+Once added the actuator dependency, we required to provide the endpoint access to access ```hystrix.stream``` in the property file.
+```yml
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: hystrix.stream, info, health, metrics
+```
+**Note:*** I am enabling the info, health, matrics API of actuator, this APIs helps to monitor the application on production and also we added ```show-details: always``` for health endpoint to view the all details of health information.
+
+I provided the basic security for ```/actuator/**``` APIs for this, I added the class ```SecurityConfiguration```.
+```java
+package com.developerhelperhub.ms.id.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@Order(1)
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+	@Override
+	public void configure(HttpSecurity http) throws Exception {
+		http.csrf().disable().authorizeRequests().antMatchers("/actuator/**").authenticated().and().httpBasic();
+	}
+
+}
+```
+
+Basic security username and password added in the property file
+```yml
+spring:
+  security:
+    user:
+      name: breaker
+      password: breaker
+```
+
+#### Circuit breaker and REST API call implementation
 We created the ```InventoryService``` service and ```Item``` model to get the information from the ```inventory-service```.
 
 Code of ```Item``` model:
