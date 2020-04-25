@@ -268,7 +268,7 @@ public class MethodSecurityConfiguration extends GlobalMethodSecurityConfigurati
 
 
 ### Code changes in the sales-service.
-I am explain the changes in two section, one is, how to implement the service call from this servie to ```inventory-service``` through the oauth2 and enabling the circute breaker.
+I am explain the changes in two section, one is, how to implement the service call from this servie to ```inventory-service``` through the oauth2 and second section for enabling the circute breaker.
 
 #### Section 1: implementing the Oauth2 service call
 We need to enable the ```@EnableOAuth2Client``` and create new bean class ```OAuth2RestTemplate``` for implementing the rest template to call the endpoints of ```inventory-service```. We should enable the oauth2 client when we are using the oauth2 implementation in the project. 
@@ -575,6 +575,68 @@ public class SalesController {
 }
 ```
 
+### Creating the my-cloud-circuit-breaker hystrix dashboard
+
+This project is used to view the hystrix dashboard to view the all reports of all microservice. This microsrvice is running under the discovery service and authentication service. We need to add the below deplendecy for enabling the dashboard.
+```xml
+<dependency>
+	<groupId>org.springframework.cloud</groupId>
+	<artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+</dependency>
+```
+
+We need to enable the ```@EnableHystrixDashboard``` annotation in the main class MyCloudCircuitBreakerApplication:
+```java
+package com.developerhelperhub.ms.id;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.netflix.hystrix.dashboard.EnableHystrixDashboard;
+
+@SpringBootApplication
+@EnableDiscoveryClient
+@EnableHystrixDashboard
+public class MyCloudCircuitBreakerApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(MyCloudCircuitBreakerApplication.class, args);
+	}
+
+}
+```
+
+We are enabling the basic security for these URL pattern ```"/", "/hystrix"``` for viewing the dashboard in the ```SecurityConfiguration``` class:
+```java
+package com.developerhelperhub.ms.id.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+
+@Configuration
+@Order(2)
+public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
+
+	@Override
+	public void configure(HttpSecurity http) throws Exception {
+		http.csrf().disable().authorizeRequests().antMatchers("/", "/hystrix").authenticated().and().httpBasic()
+				.authenticationEntryPoint(new AuthenticationEntryPointImpl());
+	}
+
+}
+```
+
+Username and password added in the property file
+```yml
+spring:
+  security:
+    user:
+      name: breaker
+      password: breaker
+```
+
 ### Code changes in the identity-service.
 
 We added the ```my-cloud-identity-credentials``` client in the run method of ```IdentityServiceApplication```.
@@ -622,6 +684,13 @@ I provided the collection and environment file of postman in the doc folder. Bef
   * Add new item: PUT - ```http://localhost:8085/sales/items```
   * Get item by id: GET - ```http://localhost:8085/sales/items/1```
 
+**Testing Hystrix Dashboard:**
+* We can execute the ```http://localhost:8086/hystrix/``` in the brower, it ask the username and password which is ```breaker``` and ```breaker```.
+* Once loaded the page, we need to provide the sales service ```/actuator/hystrix.stream``` URL in the page. which is ```http://breaker:breaker@localhost:8083/actuator/hystrix.stream```.
+* Enter the ```Sales Service``` in the title input box
+* Press the ```Monitor Stream``` button
+
+**Note:** We will see the ```loading...``` label in the dashboard, because if any API call didn't happen of the sales service. In this cases: We required to invoke ```http://localhost:8085/sales/items``` API first in the postman, then you can see the graph is loading in the dashboard.
 
 ### Reference
 * [Spring boot circuit breaker](https://cloud.spring.io/spring-cloud-netflix/2.2.x/reference/html/#circuit-breaker-spring-cloud-circuit-breaker-with-hystrix)
